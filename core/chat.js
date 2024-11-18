@@ -3,8 +3,10 @@ console.log("Chat.js is running!");
 const input = document.querySelector('input[type="text"]');
 const textBox = document.querySelector('.text-box');
 
-input.addEventListener('keypress', function (e) {
-    console.log("Key pressed:", e.key);  // Check if event is being triggered
+const kibaTextSound = new Audio('../sounds/kibasound2.wav');
+
+input.addEventListener('keypress', function (e) {   
+    console.log("Key pressed:", e.key); // Check if event is triggered
     if (e.key === 'Enter') {
         const userMessage = input.value.trim();
         if (userMessage) {
@@ -29,7 +31,19 @@ function displayMessage(message, sender) {
 }
 
 function getBotResponse(userMessage) {
-    const botReply = "Hello, I'm KIBA!";
-    console.log('Bot reply:', botReply); // Log the bot reply
-    displayMessage(botReply, 'kiba-chatbubble');
+    fetch('http://127.0.0.1:5000/api/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Bot reply:', data.reply); // Log the bot reply
+            displayMessage(data.reply, 'kiba-chatbubble');
+            kibaTextSound.play();
+        })
+        .catch(err => {
+            console.error(err);
+            displayMessage("Oops! Something went wrong. Please try again.", 'kiba-chatbubble');
+        });
 }
