@@ -1,0 +1,268 @@
+--- Contents of app.py ---
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+import openai
+import os
+
+app = Flask(__name__)
+CORS(app)  # Allow cross-origin requests
+
+from dotenv import load_dotenv
+load_dotenv()  # This will load the .env file
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+@app.route('/api/message', methods=['POST'])
+def respond():
+    user_message = request.json.get("message", "").strip()
+
+    if not user_message:
+        return jsonify({"reply": "Please provide a valid question."}), 400
+
+    try:
+        # Call OpenAI's API to generate a response
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", 
+            messages=[{"role": "system", "content": "You are an AI assistant."},
+                      {"role": "user", "content": user_message}],
+            temperature=0.7,
+            max_tokens=150,
+            top_p=0.9
+        )
+
+        # Extract the assistant's reply
+        reply = response["choices"][0]["message"]["content"].strip()
+
+        return jsonify({"reply": reply})
+
+    except Exception as e:
+        return jsonify({"reply": f"Error: {str(e)}"}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+--- Contents of chat.js ---
+console.log("Chat.js is running!");
+
+const input = document.querySelector('input[type="text"]');
+const textBox = document.querySelector('.text-box');
+
+const kibaTextSound = new Audio('../sounds/kibasound2.wav');
+
+input.addEventListener('keypress', function (e) {   
+    console.log("Key pressed:", e.key); // Check if event is triggered
+    if (e.key === 'Enter') {
+        const userMessage = input.value.trim();
+        if (userMessage) {
+            console.log('User message entered:', userMessage); // Log user input
+            displayMessage(userMessage, 'user-chatbubble');
+            input.value = '';
+            getBotResponse(userMessage);
+        }
+    }
+});
+
+function displayMessage(message, sender) {
+    const messageElement = document.createElement('div');
+    messageElement.textContent = message;
+    messageElement.classList.add('message', sender);
+
+    // Append the new message element to the text box
+    textBox.appendChild(messageElement);
+
+    // Scroll to the latest message
+    textBox.scrollTop = textBox.scrollHeight;
+}
+
+function getBotResponse(userMessage) {
+    console.log("Sending message to server:", userMessage);
+
+    fetch('/api/message', {  // Ensure the URL matches your Flask server
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+    })
+    .then(response => {
+        if (!response.ok) {
+            // Log error response for debugging
+            console.error("Server responded with an error:", response);
+            return Promise.reject("Server error, status code: " + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Bot reply:', data.reply); // Log the bot reply
+        displayMessage(data.reply, 'kiba-chatbubble');
+        kibaTextSound.play();
+    })
+    .catch(err => {
+        console.error("Error occurred during fetch:", err);
+        displayMessage("Oops! Something went wrong. Please try again.", 'kiba-chatbubble');
+    });
+}
+
+--- Contents of index.html ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIBA Chat</title>
+    <link rel="stylesheet" href="interface.css">
+</head>
+<body>
+    <div class="main-body">
+        <div class="box">
+            <div class="top-box">
+                <p style="font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; letter-spacing: 4px;">KIBA</p>
+            </div>
+            <div class="text-box">
+                <!--generated chats-->
+            </div>
+            <div class="input-box">
+                <input type="text" placeholder="Message KIBA">
+            </div>
+        </div>
+    </div>
+</body>
+<script src="chat.js"></script>
+</html>
+
+--- Contents of interface.css ---
+/* Global reset for margins, padding, borders */
+* {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-family: 'Courier New', monospace;
+    user-select: none;
+}
+
+:root {
+    --darkgrey: #181818;
+    --mediumgrey:#2d2d2d;
+    --customwhite: #F7F7F7;
+    --kibatextbubble: #2d2d2d;
+    --usertextbubble: #5ce1e6;
+    --scrollbarthumb:#2d2d2d;
+}
+
+.main-body {    
+    width: 360px;
+    height: 570px;
+    border-radius: 15px;
+    background-color: rgb(15, 15, 15);
+}
+
+.box {
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.top-box {
+    height: 60px;
+    background-color: var(--darkgrey);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--customwhite);
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.text-box {
+    height: 450px;
+    background-color: var(--darkgrey);
+    overflow-y: scroll; /* Allow vertical scroll */
+    overflow-x: hidden; /* Disable horizontal scroll */
+    padding: 25px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-right: 20px; /* Space for the scrollbar */
+}
+
+/* Initially hide the scrollbar thumb */
+.text-box::-webkit-scrollbar-thumb {
+    background-color: transparent; /* Make the thumb invisible initially */
+    border-radius: 4px;
+}
+
+/* Show the scrollbar thumb on hover */
+.text-box:hover::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbarthumb); /* Thumb color */
+}
+
+/* Custom scrollbar track */
+.text-box::-webkit-scrollbar {
+    width: 8px; /* Scrollbar width */
+}       
+
+.text-box::-webkit-scrollbar-track {    
+    background-color: var(--darkgrey); /* Scrollbar track color */
+}
+
+/* Add a pseudo-element for the scrollbar to float above content */
+.text-box::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px; /* Scrollbar width */
+    height: 100%;
+    background-color: transparent;
+    z-index: 10; /* Make sure it floats above the content */
+}
+
+.input-box {
+    height: 60px;
+    background-color: var(--darkgrey);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+input[type="text"] {
+    user-select: text;
+    border: none;
+    border-radius: 15px;
+    height: 35px;
+    width: 260px;
+    padding: 0 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    background-color: var(--mediumgrey);
+    color: #aaa;
+}
+
+input[type="text"]::placeholder {
+    color: #aaa;
+}
+
+/* Chat bubble styles */
+.message {
+    max-width: 70%;
+    padding: 10px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    font-size: 14px;
+}
+
+.user-chatbubble {
+    background-color: var(--usertextbubble);    
+    align-self: flex-end; /* Position user messages to the right */
+    color: #0D2020;
+}
+
+.kiba-chatbubble {
+    background-color: var(--kibatextbubble);
+    align-self: flex-start; /* Position bot messages to the left */
+    color: var(--customwhite);
+}
+
+
+Here's the latest updated code for KIBA core [2025-02-18 15:56:16]

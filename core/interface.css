@@ -1,0 +1,135 @@
+/* Global reset for margins, padding, borders */
+* {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-family: 'Courier New', monospace;
+    user-select: none;
+}
+
+:root {
+    --darkgrey: #181818;
+    --mediumgrey:#2d2d2d;
+    --customwhite: #F7F7F7;
+    --kibatextbubble: #2d2d2d;
+    --usertextbubble: #5ce1e6;
+    --scrollbarthumb:#2d2d2d;
+}
+
+.main-body {    
+    width: 360px;
+    height: 570px;
+    border-radius: 15px;
+    background-color: rgb(15, 15, 15);
+}
+
+.box {
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.top-box {
+    height: 60px;
+    background-color: var(--darkgrey);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--customwhite);
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.text-box {
+    height: 450px;
+    background-color: var(--darkgrey);
+    overflow-y: scroll; /* Allow vertical scroll */
+    overflow-x: hidden; /* Disable horizontal scroll */
+    padding: 25px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-right: 20px; /* Space for the scrollbar */
+}
+
+/* Initially hide the scrollbar thumb */
+.text-box::-webkit-scrollbar-thumb {
+    background-color: transparent; /* Make the thumb invisible initially */
+    border-radius: 4px;
+}
+
+/* Show the scrollbar thumb on hover */
+.text-box:hover::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbarthumb); /* Thumb color */
+}
+
+/* Custom scrollbar track */
+.text-box::-webkit-scrollbar {
+    width: 8px; /* Scrollbar width */
+}       
+
+.text-box::-webkit-scrollbar-track {    
+    background-color: var(--darkgrey); /* Scrollbar track color */
+}
+
+/* Add a pseudo-element for the scrollbar to float above content */
+.text-box::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px; /* Scrollbar width */
+    height: 100%;
+    background-color: transparent;
+    z-index: 10; /* Make sure it floats above the content */
+}
+
+.input-box {
+    height: 60px;
+    background-color: var(--darkgrey);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+input[type="text"] {
+    user-select: text;
+    border: none;
+    border-radius: 15px;
+    height: 35px;
+    width: 260px;
+    padding: 0 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    background-color: var(--mediumgrey);
+    color: #aaa;
+}
+
+input[type="text"]::placeholder {
+    color: #aaa;
+}
+
+/* Chat bubble styles */
+.message {
+    max-width: 70%;
+    padding: 10px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    font-size: 14px;
+}
+
+.user-chatbubble {
+    background-color: var(--usertextbubble);    
+    align-self: flex-end; /* Position user messages to the right */
+    color: #0D2020;
+}
+
+.kiba-chatbubble {
+    background-color: var(--kibatextbubble);
+    align-self: flex-start; /* Position bot messages to the left */
+    color: var(--customwhite);
+}
